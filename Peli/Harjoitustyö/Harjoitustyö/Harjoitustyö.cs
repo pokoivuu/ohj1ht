@@ -19,8 +19,7 @@ public class Harjoitustyö : PhysicsGame
         PhysicsObject pelaaja = new PhysicsObject(150, 150, Shape.FromImage(LoadImage("hirviö")));        
         pelaaja.Image = LoadImage("hirviö.png");
         
-        // animaatio
-        pelaaja.Animation = new Animation(ukkelinKavely);       
+        // animaatio      
               
 
         pelaaja.LinearDamping = 0.95;
@@ -51,6 +50,7 @@ public class Harjoitustyö : PhysicsGame
     void LiikutaPelaajaa(PhysicsObject pelaaja, Vector voima)
     {
         pelaaja.Hit(voima);
+        pelaaja.Animation = new Animation(ukkelinKavely);
         pelaaja.Animation.Start();
         pelaaja.Animation.FPS = 10;
 
@@ -59,6 +59,7 @@ public class Harjoitustyö : PhysicsGame
     void PelaajaHyppaa(PhysicsObject pelaaja, Vector voima)
     {
         pelaaja.Hit(voima);
+        pelaaja.Animation.Stop();
     }
 
     void PelaajaLyo(PhysicsObject pelaaja)
