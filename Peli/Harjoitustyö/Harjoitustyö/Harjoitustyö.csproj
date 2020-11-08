@@ -17,6 +17,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Content\hirviö – kopio.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
       <None Update="Content\hirviö.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

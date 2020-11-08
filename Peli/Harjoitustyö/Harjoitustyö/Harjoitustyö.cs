@@ -1,14 +1,22 @@
-using System;
-using System.Collections.Generic;
 using Jypeli;
+using Jypeli.Effects;
+using Jypeli.Physics;
 using Jypeli.Assets;
+using Jypeli.WP7;
+using Jypeli.Devices;
 using Jypeli.Controls;
+using Jypeli.GameObjects;
+using Jypeli.Physics2d;
 using Jypeli.Widgets;
 
 public class Harjoitustyö : PhysicsGame
 {
     private Image[] ukkelinKavely = LoadImages("hirviö", "hirviöliikkuu2", "hirviöliikkuu");
     private Image[] ukkelinLyonti = LoadImages("hirviö", "hirviölyö");
+
+
+    SoundEffect explosionSound = LoadSoundEffect("exp");
+
     public override void Begin()
 
     {
@@ -24,6 +32,7 @@ public class Harjoitustyö : PhysicsGame
 
         pelaaja.LinearDamping = 0.95;
         pelaaja.CanRotate = false;
+        pelaaja.IgnoresExplosions = true;
 
         Add(pelaaja);
         LuoKentta();
@@ -37,9 +46,9 @@ public class Harjoitustyö : PhysicsGame
        
 
         Camera.ZoomToLevel(-50);
-        Keyboard.Listen(Key.Left, ButtonState.Down, LiikutaPelaajaa, "Move left", pelaaja, new Vector(-10, 0));
-        Keyboard.Listen(Key.Right, ButtonState.Down, LiikutaPelaajaa, "Move right", pelaaja, new Vector(10, 0));
-        Keyboard.Listen(Key.Up, ButtonState.Pressed, PelaajaHyppaa, "Move up", pelaaja, new Vector(0, 500));
+        Keyboard.Listen(Key.Left, ButtonState.Down, LiikutaPelaajaaVasemmalle, "Move left", pelaaja, new Vector(-10, 0));
+        Keyboard.Listen(Key.Right, ButtonState.Down, LiikutaPelaajaaOikealle, "Move right", pelaaja, new Vector(10, 0));
+        Keyboard.Listen(Key.Up, ButtonState.Pressed, PelaajaHyppaa, "Move up", pelaaja, new Vector(0, 1000));
         Keyboard.Listen(Key.Space, ButtonState.Pressed, PelaajaLyo, "Lyo", pelaaja);
 
 
@@ -47,14 +56,20 @@ public class Harjoitustyö : PhysicsGame
         Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
     }
 
-    void LiikutaPelaajaa(PhysicsObject pelaaja, Vector voima)
+    void LiikutaPelaajaaOikealle(PhysicsObject pelaaja, Vector voima)
+    {
+        pelaaja.Hit(voima);
+        pelaaja.Animation = new Animation(ukkelinKavely);
+        pelaaja.Animation.Start();
+        pelaaja.Animation.FPS = 10;      
+    }
+
+    void LiikutaPelaajaaVasemmalle(PhysicsObject pelaaja, Vector voima)
     {
         pelaaja.Hit(voima);
         pelaaja.Animation = new Animation(ukkelinKavely);
         pelaaja.Animation.Start();
         pelaaja.Animation.FPS = 10;
-
-        
     }
     void PelaajaHyppaa(PhysicsObject pelaaja, Vector voima)
     {
@@ -67,7 +82,10 @@ public class Harjoitustyö : PhysicsGame
         pelaaja.Animation = new Animation(ukkelinLyonti);
         pelaaja.Animation.Start(1);
         pelaaja.Animation.FPS = 5;
+        
     }
+
+
 
     public void LuoKentta()
     {
@@ -108,8 +126,19 @@ public class Harjoitustyö : PhysicsGame
             palikka.Position = paikka;
             palikka.Shape = Shape.Rectangle;
             palikka.Image = LoadImage("tiili");
-            Add(palikka);
+            AddCollisionHandler(palikka, PalikkaCollides);
+            Add(palikka);           
         }
+
+        void PalikkaCollides(PhysicsObject palikka, PhysicsObject target)
+        {
+            Explosion rajahdys = new Explosion(50);
+            rajahdys.Position = palikka.Position;
+            Add(rajahdys);
+            palikka.Destroy();
+        }
+
+        
 
 
     }
