@@ -11,25 +11,19 @@ using Jypeli.Widgets;
 
 public class Harjoitustyö : PhysicsGame
 {
-    private Image[] ukkelinKavely = LoadImages("hirviö", "hirviöliikkuu2", "hirviöliikkuu");
-    private Image[] ukkelinLyonti = LoadImages("hirviö", "hirviölyö");
-
+    private static Image[] ukkelinKavely = LoadImages("hirviö", "hirviöliikkuu2", "hirviöliikkuu");
+    private static Image[] ukkelinLyonti = LoadImages("hirviö", "hirviölyö");
+    private Animation kavely = new Animation(ukkelinKavely);
+    int palikkaHealth = 3;
 
     SoundEffect explosionSound = LoadSoundEffect("exp");
 
     public override void Begin()
 
-    {
-
-        
-
-         
+    {                
         PhysicsObject pelaaja = new PhysicsObject(150, 150, Shape.FromImage(LoadImage("hirviö")));        
         pelaaja.Image = LoadImage("hirviö.png");
-        
-        // animaatio      
-              
-
+                                    
         pelaaja.LinearDamping = 0.95;
         pelaaja.CanRotate = false;
         pelaaja.IgnoresExplosions = true;
@@ -46,8 +40,8 @@ public class Harjoitustyö : PhysicsGame
        
 
         Camera.ZoomToLevel(-50);
-        Keyboard.Listen(Key.Left, ButtonState.Down, LiikutaPelaajaaVasemmalle, "Move left", pelaaja, new Vector(-10, 0));
-        Keyboard.Listen(Key.Right, ButtonState.Down, LiikutaPelaajaaOikealle, "Move right", pelaaja, new Vector(10, 0));
+        Keyboard.Listen(Key.Left, ButtonState.Down, LiikutaPelaajaa, "Move left", pelaaja, new Vector(-10, 0));
+        Keyboard.Listen(Key.Right, ButtonState.Down, LiikutaPelaajaa, "Move right", pelaaja, new Vector(10, 0));
         Keyboard.Listen(Key.Up, ButtonState.Pressed, PelaajaHyppaa, "Move up", pelaaja, new Vector(0, 1000));
         Keyboard.Listen(Key.Space, ButtonState.Pressed, PelaajaLyo, "Lyo", pelaaja);
 
@@ -56,91 +50,133 @@ public class Harjoitustyö : PhysicsGame
         Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
     }
 
-    void LiikutaPelaajaaOikealle(PhysicsObject pelaaja, Vector voima)
+    // aliohjelma, jolla pelaaja liikkuu vaakasuorassa
+    private void LiikutaPelaajaa(PhysicsObject pelaaja, Vector voima)
     {
-        pelaaja.Hit(voima);
-        pelaaja.Animation = new Animation(ukkelinKavely);
-        pelaaja.Animation.Start();
-        pelaaja.Animation.FPS = 10;      
+        pelaaja.Hit(voima);             
     }
 
-    void LiikutaPelaajaaVasemmalle(PhysicsObject pelaaja, Vector voima)
-    {
-        pelaaja.Hit(voima);
-        pelaaja.Animation = new Animation(ukkelinKavely);
-        pelaaja.Animation.Start();
-        pelaaja.Animation.FPS = 10;
-    }
-    void PelaajaHyppaa(PhysicsObject pelaaja, Vector voima)
+    // luodaan aliohjelma, jolla pelaaja hyppää
+    private void PelaajaHyppaa(PhysicsObject pelaaja, Vector voima)
     {
         pelaaja.Hit(voima);
         pelaaja.Animation.Stop();
     }
 
-    void PelaajaLyo(PhysicsObject pelaaja)
+    // luodaan aliohjelma, jolla pelaaja lyö
+    private void PelaajaLyo(PhysicsObject pelaaja)
     {
         pelaaja.Animation = new Animation(ukkelinLyonti);
         pelaaja.Animation.Start(1);
-        pelaaja.Animation.FPS = 5;
-        
+        pelaaja.Animation.FPS = 5;       
     }
 
 
-
+   // seuraava aliohjelma luo peliin kentän
+   
     public void LuoKentta()
     {
-        string[] kentta =
+        string[] kentta1 =
             {
 
   
   "                        ",
   "                        ",
   "                        ",
-  "   ==         ==        ",
-  "   ==         ==        ",
-  "   ==   ==   ====       ",
-  "   ==   ==   ====       ",
-  "   ==   ==   ====       ",
+  "   ==         **        ",
+  "   ==         **        ",
+  "   ==   ++   ****       ",
+  "   ==   ++   ****       ",
+  "   ==   ++   ****       ",
   "------------------------"
 
 
         };
-        TileMap ruudut = TileMap.FromStringArray(kentta);
-        ruudut.SetTileMethod('=', LuoPalikka);
+        string[] kentta2 =        
+        {
+
+
+  "                         ",
+  "                         ",
+  "         ++              ",
+  "         ++              ",
+  "   ===   ++    **        ",
+  "   ===   ++   ****       ",
+  "   ===   ++   ****       ",
+  "   ===   ++   ****       ",
+  "-------------------------"
+        };
+
+        string[] kentta3 =
+{
+
+
+  "                         ",
+  "   ===                   ",
+  "   ===   ++      *       ",
+  "   ===   ++     **       ",
+  "   ===   ++    ***       ",
+  "   ===   ++   ****       ",
+  "   ===   ++   ****       ",
+  "   ===   ++   ****       ",
+  "-------------------------"
+
+
+        };
+        // aliohjelma arpoo kolmesta eri kenttävaihtoehdosta yhden
+        // ja luo sen pelattavaksi kentäksi
+        TileMap ruudut = TileMap.FromStringArray(RandomGen.SelectOne<string[]>(kentta1, kentta2, kentta3));
+        ruudut.SetTileMethod('=', LuoPalikka);       
+        ruudut.SetTileMethod('*', LuoPalikka);
+        ruudut.SetTileMethod('+', LuoPalikka);
         ruudut.SetTileMethod('-', LuoAsfaltti);
         ruudut.Execute();
 
+   } 
 
-        void LuoAsfaltti(Vector paikka, double leveys, double korkeus)
+    // luodaan peliin grafiikkaa eli asfaltti, joka tulee tason pohjalle
+    private void LuoAsfaltti(Vector paikka, double leveys, double korkeus)
+    {
+        PhysicsObject asfaltti = PhysicsObject.CreateStaticObject(leveys, korkeus);
+        asfaltti.Position = paikka;
+        asfaltti.Shape = Shape.Rectangle;
+        asfaltti.Image = LoadImage("tie");
+        Add(asfaltti);
+    }
+
+    // luodaan rakkenusten palikat, joita pelaaja yrittää tuhota
+    private void LuoPalikka(Vector paikka, double leveys, double korkeus)
+    {
+        PhysicsObject palikka = PhysicsObject.CreateStaticObject(leveys, korkeus);
+        palikka.Position = paikka;
+        palikka.Shape = Shape.Rectangle;
+        palikka.Image = LoadImage("tiili");        
+        AddCollisionHandler(palikka, PalikkaCollides);
+        Add(palikka);
+    }
+
+    // luodaan törmäys pelaajan ja palikoiden välille
+    // joka kerta kun pelaaja törmää palikan kanssa palikan kuva vaihtuu ja siltä lähtee yksi "elämä pois"
+    private void PalikkaCollides(PhysicsObject palikka, PhysicsObject target)
+    {
+        
+        palikkaHealth--;
+        if (palikkaHealth == 2)
         {
-            PhysicsObject asfaltti = PhysicsObject.CreateStaticObject(leveys, korkeus);
-            asfaltti.Position = paikka;
-            asfaltti.Shape = Shape.Rectangle;
-            asfaltti.Image = LoadImage("tie");
-            Add(asfaltti);
+            palikka.Image = LoadImage("tiili 2");
         }
-
-        void LuoPalikka(Vector paikka, double leveys, double korkeus)
+        if (palikkaHealth == 1)
         {
-            PhysicsObject palikka = PhysicsObject.CreateStaticObject(leveys, korkeus);
-            palikka.Position = paikka;
-            palikka.Shape = Shape.Rectangle;
-            palikka.Image = LoadImage("tiili");
-            AddCollisionHandler(palikka, PalikkaCollides);
-            Add(palikka);           
+            palikka.Image = LoadImage("tiili 3");
         }
-
-        void PalikkaCollides(PhysicsObject palikka, PhysicsObject target)
+        if (palikkaHealth <= 0)
         {
+            palikkaHealth = 3;
             Explosion rajahdys = new Explosion(50);
             rajahdys.Position = palikka.Position;
             Add(rajahdys);
             palikka.Destroy();
         }
-
-        
-
-
     }
 }
 
