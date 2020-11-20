@@ -1,4 +1,7 @@
 using Jypeli;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Jypeli.Effects;
 using Jypeli.Physics;
 using Jypeli.Assets;
@@ -12,7 +15,8 @@ using Jypeli.Widgets;
 public class Harjoitustyö : PhysicsGame
 {
     private static Image[] ukkelinKavely = LoadImages("hirviö", "hirviöliikkuu2", "hirviöliikkuu");
-    private static Image[] ukkelinLyonti = LoadImages("hirviö", "hirviölyö");
+    private static Image[] ukkelinLyonti = LoadImages("hirviö", "hirviölyö");    
+    
     private Animation kavely = new Animation(ukkelinKavely);
     int palikkaHealth = 3;
 
@@ -27,9 +31,12 @@ public class Harjoitustyö : PhysicsGame
         pelaaja.LinearDamping = 0.95;
         pelaaja.CanRotate = false;
         pelaaja.IgnoresExplosions = true;
-
+        pelaaja.Tag = "pelaaja";
+        AddCollisionHandler(pelaaja, "palikka", PalikkaCollides);
         Add(pelaaja);
+        
         LuoKentta();
+        LuoVihollinen();
 
         Level.Background.Image = LoadImage("Pelintausta.jpg");
         Level.Background.FitToLevel();
@@ -52,8 +59,8 @@ public class Harjoitustyö : PhysicsGame
 
     // aliohjelma, jolla pelaaja liikkuu vaakasuorassa
     private void LiikutaPelaajaa(PhysicsObject pelaaja, Vector voima)
-    {
-        pelaaja.Hit(voima);             
+    {        
+        pelaaja.Hit(voima);
     }
 
     // luodaan aliohjelma, jolla pelaaja hyppää
@@ -65,15 +72,16 @@ public class Harjoitustyö : PhysicsGame
 
     // luodaan aliohjelma, jolla pelaaja lyö
     private void PelaajaLyo(PhysicsObject pelaaja)
-    {
+    {        
         pelaaja.Animation = new Animation(ukkelinLyonti);
         pelaaja.Animation.Start(1);
-        pelaaja.Animation.FPS = 5;       
+        pelaaja.Animation.FPS = 5;
+        
     }
 
 
-   // seuraava aliohjelma luo peliin kentän
-   
+    // seuraava aliohjelma luo peliin kentän
+
     public void LuoKentta()
     {
         string[] kentta1 =
@@ -150,20 +158,21 @@ public class Harjoitustyö : PhysicsGame
         PhysicsObject palikka = PhysicsObject.CreateStaticObject(leveys, korkeus);
         palikka.Position = paikka;
         palikka.Shape = Shape.Rectangle;
-        palikka.Image = LoadImage("tiili");        
-        AddCollisionHandler(palikka, PalikkaCollides);
+        palikka.Image = LoadImage("tiili");
+        palikka.Tag = "palikka";
+        palikka.CollisionIgnoreGroup = 1;        
         Add(palikka);
     }
 
     // luodaan törmäys pelaajan ja palikoiden välille
     // joka kerta kun pelaaja törmää palikan kanssa palikan kuva vaihtuu ja siltä lähtee yksi "elämä pois"
-    private void PalikkaCollides(PhysicsObject palikka, PhysicsObject target)
+    private void PalikkaCollides(PhysicsObject pelaaja, PhysicsObject palikka)
     {
         
         palikkaHealth--;
         if (palikkaHealth == 2)
         {
-            palikka.Image = LoadImage("tiili 2");
+            palikka.Image = LoadImage("tiili2");
         }
         if (palikkaHealth == 1)
         {
@@ -178,5 +187,67 @@ public class Harjoitustyö : PhysicsGame
             palikka.Destroy();
         }
     }
+
+    // aliohjelma, jossa luodaan vihollinen ja sille tekoäly
+    private void LuoVihollinen()
+    {
+        PlatformCharacter rotta = new PlatformCharacter(40.0, 40.0);
+        rotta.Position = Level.GetRandomPosition();
+        rotta.CollisionIgnoreGroup = 1;
+        rotta.Tag = "rotta";
+        rotta.Image = LoadImage("rotta");
+        rotta.Shape = Shape.FromImage(LoadImage("rotta"));
+        Add(rotta, 1);
+
+        PlatformWandererBrain tasoAivot = new PlatformWandererBrain();
+        tasoAivot.Speed = 100;
+
+        rotta.Brain = tasoAivot;
+
+        //pelaaja1 on PlatformCharacter-tyyppinen
+        rotta.Weapon = new AssaultRifle(30, 10);
+
+        rotta.Weapon.X = 10.0;
+        rotta.Weapon.Y = 5.0;
+        //Ammusten määrä aluksi:
+        rotta.Weapon.Ammo.Value = 1000;
+        Timer ajastin = new Timer();
+        ajastin.Interval = 1.5;
+        ajastin.Timeout += delegate { AmmuAseella(); };
+        ajastin.Start();
+
+        rotta.Weapon.ProjectileCollision = AmmusOsui;
+
+        void AmmuAseella()
+        {
+            //Vector suunta = (rotta.Position - rotta.Position).Normalize();
+           // rotta.Weapon.Angle = suunta.Angle;
+            PhysicsObject ammus = rotta.Weapon.Shoot();
+            
+                                            
+            
+            if (ammus != null)
+            {
+                //ammus.Size *= 3;
+                //ammus.Image = ...
+                //ammus.MaximumLifetime = TimeSpan.FromSeconds(2.0);
+            }
+        }        
+
+
+    }
+
+    void AmmusOsui(PhysicsObject ammus, PhysicsObject pelaaja)
+    {
+        ammus.Destroy();
+    }
+
+
+
+
 }
+
+
+
+
 
