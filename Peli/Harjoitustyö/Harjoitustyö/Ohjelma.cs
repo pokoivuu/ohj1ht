@@ -17,7 +17,7 @@ namespace Program
         [STAThread]
         static void Main()
         {
-            using (var game = new Harjoitustyö())
+            using (var game = new Kaupunkirahina())
                 game.Run();
         }
     }
